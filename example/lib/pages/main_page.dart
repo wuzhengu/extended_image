@@ -97,6 +97,8 @@ class MainPage extends StatelessWidget {
           ..sort((DemoRouteResult a, DemoRouteResult b) =>
               b.group.compareTo(a.group)),
         (DemoRouteResult x) => x.group));
+
+    routesGroup['Test'] = [];
   }
   final Map<String, List<DemoRouteResult>> routesGroup =
       <String, List<DemoRouteResult>>{};
@@ -165,10 +167,15 @@ class MainPage extends StatelessWidget {
                   ],
                 ),
                 onTap: () {
+                  var entry = routesGroup.entries.toList()[index];
+                  if(entry.value.isEmpty) {
+                    Navigator.pushNamed(context, Routes.fluttercandiesZoomimage);
+                    return;
+                  }
                   Navigator.pushNamed(
                       context, Routes.fluttercandiesDemogrouppage.name,
                       arguments: Routes.fluttercandiesDemogrouppage
-                          .d(keyValue: routesGroup.entries.toList()[index]));
+                          .d(keyValue: entry));
                 },
               ));
         },
