@@ -155,48 +155,11 @@ class GestureDetails {
     if (!userOffset && _center != null) {
       return _center;
     }
-    //var offset = editAction.paintOffset(this.offset);
-    if (totalScale! > 1.0) {
-      if (_computeHorizontalBoundary && _computeVerticalBoundary) {
-        return destinationRect.center * totalScale! + offset!;
-      } else if (_computeHorizontalBoundary) {
-        //only scale Horizontal
-        return Offset(destinationRect.center.dx * totalScale!,
-                destinationRect.center.dy) +
-            Offset(offset!.dx, 0.0);
-      } else if (_computeVerticalBoundary) {
-        //only scale Vertical
-        return Offset(destinationRect.center.dx,
-                destinationRect.center.dy * totalScale!) +
-            Offset(0.0, offset!.dy);
-      } else {
-        return destinationRect.center;
-      }
-    } else {
-      return destinationRect.center;
-    }
+    return destinationRect.center * totalScale! + offset!;
   }
 
   Offset _getFixedOffset(Rect destinationRect, Offset center) {
-    if (totalScale! > 1.0) {
-      if (_computeHorizontalBoundary && _computeVerticalBoundary) {
-        return center - destinationRect.center * totalScale!;
-      } else if (_computeHorizontalBoundary) {
-        //only scale Horizontal
-        return center -
-            Offset(destinationRect.center.dx * totalScale!,
-                destinationRect.center.dy);
-      } else if (_computeVerticalBoundary) {
-        //only scale Vertical
-        return center -
-            Offset(destinationRect.center.dx,
-                destinationRect.center.dy * totalScale!);
-      } else {
-        return center - destinationRect.center;
-      }
-    } else {
-      return center - destinationRect.center;
-    }
+    return center - destinationRect.center * totalScale!;
   }
 
   Rect _getDestinationRect(Rect destinationRect, Offset center) {
@@ -218,13 +181,12 @@ class GestureDetails {
         _innerCalculateFinalDestinationRect(layoutRect, destinationRect);
 
     ///first call,initial image rect with alignment
-    if (totalScale! > 1.0 &&
-        destinationRectChanged &&
-        initialAlignment != null) {
-      offset = _getFixedOffset(destinationRect,
-          result.center + _getCenterDif(result, layoutRect, initialAlignment));
-      result = _innerCalculateFinalDestinationRect(layoutRect, destinationRect);
-      //initialAlignment = null;
+    if (destinationRectChanged && initialAlignment != null) {
+      var dif = _getCenterDif(result, layoutRect, initialAlignment);
+      if(dif != Offset.zero) {
+        result = result.translate(dif.dx, dif.dy);
+        offset = result.center - destinationRect.center * totalScale!;
+      }
     }
     this.destinationRect = result;
     this.layoutRect = layoutRect;
@@ -262,36 +224,44 @@ class GestureDetails {
     final Offset center = _getCenter(destinationRect)!;
     Rect result = _getDestinationRect(destinationRect, center);
 
-    if (_computeHorizontalBoundary) {
-      //move right
-      if (result.left.greaterThanOrEqualTo(layoutRect.left)) {
-        result = Rect.fromLTWH(
-            layoutRect.left, result.top, result.width, result.height);
-        _boundary.left = true;
-      }
-
-      ///move left
-      if (result.right.lessThanOrEqualTo(layoutRect.right)) {
-        result = Rect.fromLTWH(layoutRect.right - result.width, result.top,
-            result.width, result.height);
-        _boundary.right = true;
-      }
+    if (result.left.greaterThanOrEqualTo(layoutRect.left) == _computeHorizontalBoundary) {
+      result = Rect.fromLTWH(
+        layoutRect.left,
+        result.top,
+        result.width,
+        result.height,
+      );
+      _boundary.left = true;
     }
 
-    if (_computeVerticalBoundary) {
-      //move down
-      if (result.bottom.lessThanOrEqualTo(layoutRect.bottom)) {
-        result = Rect.fromLTWH(result.left, layoutRect.bottom - result.height,
-            result.width, result.height);
-        _boundary.bottom = true;
-      }
+    if (result.right.lessThanOrEqualTo(layoutRect.right) == _computeHorizontalBoundary) {
+      result = Rect.fromLTWH(
+        layoutRect.right - result.width,
+        result.top,
+        result.width,
+        result.height,
+      );
+      _boundary.right = true;
+    }
 
-      //move up
-      if (result.top.greaterThanOrEqualTo(layoutRect.top)) {
-        result = Rect.fromLTWH(
-            result.left, layoutRect.top, result.width, result.height);
-        _boundary.top = true;
-      }
+    if (result.bottom.lessThanOrEqualTo(layoutRect.bottom) == _computeVerticalBoundary) {
+      result = Rect.fromLTWH(
+        result.left,
+        layoutRect.bottom - result.height,
+        result.width,
+        result.height,
+      );
+      _boundary.bottom = true;
+    }
+
+    if (result.top.greaterThanOrEqualTo(layoutRect.top) == _computeVerticalBoundary) {
+      result = Rect.fromLTWH(
+        result.left,
+        layoutRect.top,
+        result.width,
+        result.height,
+      );
+      _boundary.top = true;
     }
 
     _computeHorizontalBoundary =
